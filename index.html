@@ -142,7 +142,11 @@ const wvb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.bufferData(gl.
 const wcb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(worldC),gl.STATIC_DRAW);
 const avb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,avb);gl.bufferData(gl.ARRAY_BUFFER,aircraft.v,gl.STATIC_DRAW);
 const acb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,acb);gl.bufferData(gl.ARRAY_BUFFER,aircraft.c,gl.STATIC_DRAW);
-buildAircraft(0);\nconst planeChoice=document.getElementById("planeChoice");planeChoice.addEventListener("change",()=>{aircraftStyle=Number(planeChoice.value);buildAircraft(aircraftStyle)});\nlet state={x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:0,power:0,started:false};let input={x:0,y:0,throttle:false,brake:false};
+buildAircraft(0);
+const planeChoice=document.getElementById("planeChoice");
+planeChoice.addEventListener("change",()=>{aircraftStyle=Number(planeChoice.value);buildAircraft(aircraftStyle)});
+let state={x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:0,power:0,started:false};
+let input={x:0,y:0,throttle:false,brake:false};
 function resize(){let d=Math.min(devicePixelRatio||1,1.6);canvas.width=Math.floor(innerWidth*d);canvas.height=Math.floor(innerHeight*d);gl.viewport(0,0,canvas.width,canvas.height)}addEventListener('resize',resize);resize();
 function draw(){gl.clearColor(.30,.66,.88,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);let cp=Math.cos(state.pitch),sp=Math.sin(state.pitch),cy=Math.cos(state.yaw),sy=Math.sin(state.yaw);let forward=[sy*cp,sp,-cy*cp],right=[cy,0,sy];let eye=[state.x-forward[0]*8+right[0]*1,state.y+3.3,state.z-forward[2]*8+right[2]*1],target=[state.x+forward[0]*4,state.y+forward[1]*4,state.z+forward[2]*4];let vp=matMul(perspective(1.0,canvas.width/canvas.height,.1,1700),look(eye,target,[0,1,0]));
 gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locP);gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locC);gl.uniformMatrix4fv(locM,false,vp);gl.drawArrays(gl.TRIANGLES,0,worldV.length/3);
