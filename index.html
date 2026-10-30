@@ -11,7 +11,7 @@
  <div class="top"><div class="pill">السرعة <b><span id="speed">0</span> km/h</b></div><div class="pill">الارتفاع <b><span id="alt">1200</span> m</b></div><div class="pill">المرحلة <b id="level">1 / 5</b></div><div class="pill">Fling 3D <b id="status">متوقف على المدرج</b></div></div>
  <div class="controls"><div id="stick" class="stick"><div id="knob" class="knob"></div></div><div class="rightControls"><div><div class="label">قوة المحرك</div><div class="bar"><div class="fill" id="power"></div></div></div><button class="btn" id="throttle">زيادة السرعة +</button><button class="btn" id="brake">فرامل</button><button class="btn" id="reset">إعادة</button></div></div>
 </div>
-<div class="center" id="menu"><div class="panel"><h1>✈ FLING 3D</h1><p>حلّق فوق الجزر والجبال، وتحكّم بالطائرة بعصا اللمس. حرّك العصا للتوجيه واستخدم زر المحرك لزيادة السرعة.</p><button class="primary" id="start">ابدأ الطيران</button><p class="small">ابدأ والطائرة ثابتة. اضغط مطولاً على زيادة السرعة للتحرك، وكلما قطعت مسافة تفتح مرحلة جديدة.</p></div></div>
+<div class="center" id="menu"><div class="panel"><h1>✈ FLING 3D</h1><p>حلّق فوق الجزر والجبال، وتحكّم بالطائرة بعصا اللمس. حرّك العصا للتوجيه واستخدم زر المحرك لزيادة السرعة.</p><select id="planeChoice" aria-label="اختيار الطائرة" style="width:100%;padding:12px;border-radius:12px;background:#102b45;color:white;border:1px solid #168ac4;font-size:15px;margin-top:8px"><option value="0">الطائرة الأساسية</option><option value="1">المقاتلة الخفيفة</option><option value="2">طائرة النقل</option><option value="3">المقاتلة النفاثة</option><option value="4">الطائرة الفضائية</option><option value="5">الأسطورية</option></select><button class="primary" id="start">ابدأ الطيران</button><p class="small">ابدأ والطائرة ثابتة. اضغط مطولاً على زيادة السرعة للتحرك، وكلما قطعت مسافة تفتح مرحلة جديدة.</p></div></div>
 <script>
 (()=>{
 const canvas=document.getElementById('gl'),gl=canvas.getContext('webgl',{antialias:true,alpha:false})||canvas.getContext('experimental-webgl');
@@ -25,16 +25,65 @@ let verts=[],cols=[];
 function tri(a,b,c,col){for(let v of [a,b,c]){verts.push(...v);cols.push(...col)}}
 function quad(a,b,c,d,col){tri(a,b,c,col);tri(a,c,d,col)}
 function cube(cx,cy,cz,sx,sy,sz,col){let x=cx,y=cy,z=cz,X=x+sx,Y=y+sy,Z=z+sz;let a=[x,y,z],b=[X,y,z],c=[X,Y,z],d=[x,Y,z],e=[x,y,Z],f=[X,y,Z],g=[X,Y,Z],h=[x,Y,Z];quad(a,b,c,d,col);quad(e,h,g,f,col);quad(a,e,f,b,col);quad(d,c,g,h,col);quad(a,d,h,e,col);quad(b,f,g,c,col)}
-// aircraft, with fuselage, wings, tail and twin engines
-cube(-.12,-.10,-1.25,.24,.20,2.5,[.86,.9,.95]);
-cube(-2.05,-.04,-.35,4.1,.10,.72,[.14,.55,.83]);
-cube(-.75,.02,-.45,1.5,.05,.5,[.95,.45,.12]);
-cube(-.75,-.02,1.0,1.5,.08,.48,[.16,.62,.86]);
-cube(-.10,.08,.88,.20,.42,.50,[.92,.95,1]);
-cube(-.95,-.16,-.35,.28,.18,1.25,[.08,.13,.19]);cube(.67,-.16,-.35,.28,.18,1.25,[.08,.13,.19]);
-// windshield
-cube(-.105,.10,-.70,.21,.12,.46,[.06,.20,.29]);
-let aircraft={v:new Float32Array(verts),c:new Float32Array(cols)};
+// Smooth procedural aircraft models: elliptical fuselage, swept wings, canopy and engines
+const aircraftStyles=[
+ {name:'الطائرة الأساسية',body:[.88,.91,.94],wing:[.08,.48,.78],accent:[.88,.12,.13],glass:[.08,.36,.53],engine:[.18,.24,.30],span:2.15,sweep:.28,engines:1},
+ {name:'المقاتلة الخفيفة',body:[.10,.43,.78],wing:[.08,.68,.94],accent:[.94,.18,.24],glass:[.06,.24,.43],engine:[.24,.31,.38],span:2.35,sweep:.42,engines:1},
+ {name:'طائرة النقل',body:[.91,.62,.12],wing:[.98,.70,.18],accent:[.98,.87,.46],glass:[.14,.32,.40],engine:[.28,.30,.28],span:2.55,sweep:.12,engines:2},
+ {name:'المقاتلة النفاثة',body:[.78,.12,.16],wing:[.91,.16,.19],accent:[1,.48,.35],glass:[.08,.25,.40],engine:[.20,.22,.28],span:2.05,sweep:.58,engines:2},
+ {name:'الطائرة الفضائية',body:[.72,.85,.96],wing:[.10,.66,.91],accent:[.18,.94,1],glass:[.10,.38,.60],engine:[.10,.65,.90],span:2.2,sweep:.48,engines:2},
+ {name:'الأسطورية',body:[.16,.20,.29],wing:[.96,.36,.08],accent:[1,.58,.12],glass:[.04,.23,.35],engine:[.95,.32,.08],span:2.45,sweep:.66,engines:2}
+];
+let aircraftStyle=0,aircraft={v:new Float32Array(0),c:new Float32Array(0)};
+function ellipsoid(cx,cy,cz,rx,ry,rz,col,steps=12,rings=8){
+ for(let j=0;j<rings;j++){let p1=-Math.PI/2+j/rings*Math.PI,p2=-Math.PI/2+(j+1)/rings*Math.PI;
+  for(let i=0;i<steps;i++){let a=i/steps*Math.PI*2,b=(i+1)/steps*Math.PI*2;
+   const pt=(p,t)=>[cx+rx*Math.cos(p)*Math.cos(t),cy+ry*Math.sin(p),cz+rz*Math.cos(p)*Math.sin(t)];
+   let a1=pt(p1,a),b1=pt(p1,b),a2=pt(p2,a),b2=pt(p2,b);tri(a1,a2,b2,col);tri(a1,b2,b1,col);
+  }
+ }
+}
+function wing(poly,yTop,yBot,col){
+ let center=poly.reduce((o,p)=>[o[0]+p[0]/poly.length,o[1]+p[1]/poly.length],[0,0]);
+ for(let i=0;i<poly.length;i++){let a=poly[i],b=poly[(i+1)%poly.length];
+  tri([center[0],yTop,center[1]],[a[0],yTop,a[1]],[b[0],yTop,b[1]],col);
+  tri([center[0],yBot,center[1]],[b[0],yBot,b[1]],[a[0],yBot,a[1]],col);
+  quad([a[0],yBot,a[1]],[b[0],yBot,b[1]],[b[0],yTop,b[1]],[a[0],yTop,a[1]],[Math.max(0,col[0]*.72),Math.max(0,col[1]*.72),Math.max(0,col[2]*.72)]);
+ }
+}
+function buildAircraft(index){
+ verts.length=0;cols.length=0;let st=aircraftStyles[index],body=st.body;
+ // جسم الطائرة من حلقات بيضاوية متدرجة ليعطي مقدمة مدببة ومؤخرة عريضة
+ const sections=[[-1.72,.035,.045],[-1.48,.105,.12],[-1.05,.17,.17],[-.45,.20,.19],[.35,.18,.17],[.95,.13,.13],[1.42,.07,.08],[1.58,.025,.035]];
+ for(let k=0;k<sections.length-1;k++){let A=sections[k],B=sections[k+1];
+  for(let i=0;i<16;i++){let a=i/16*Math.PI*2,b=(i+1)/16*Math.PI*2;
+   let pt=(q,t)=>[Math.cos(t)*q[1],.02+Math.sin(t)*q[2],q[0]];
+   let p1=pt(A,a),p2=pt(A,b),p3=pt(B,b),p4=pt(B,a);quad(p1,p2,p3,p4,body);
+  }
+ }
+ // أجنحة رئيسية ذات حواف مائلة
+ let sw=st.sweep;
+ wing([[-.17,-.72],[.17,-.72],[st.span,-.28],[st.span*.92,.12],[.62,.08],[-.55,.22],[-st.span*.92,.12],[-st.span,-.28]],.035,-.035,st.wing);
+ // ذيل أفقي ورأس ذيل رأسي
+ wing([[-.12,1.02],[.12,1.02],[.86,1.36],[.72,1.53],[-.72,1.53],[-.86,1.36]],.08,.015,st.accent);
+ wing([[-.10,1.20],[.10,1.20],[.34,1.56],[.20,1.62],[-.20,1.62],[-.34,1.56]],.30,-.02,st.accent);
+ // قمرة قيادة زجاجية بارزة
+ ellipsoid(0,.185,-.67,.145,.105,.48,st.glass,14,8);
+ ellipsoid(0,.205,-.79,.115,.055,.22,[.35,.72,.91],12,6);
+ // محركات انسيابية أسفل الجناحين مع حلقات أمامية مضيئة
+ for(let e=0;e<st.engines;e++){let x=st.engines===1?0:(e===0?-.92:.92);
+  if(st.engines===1)x=0;
+  ellipsoid(x,-.105,-.12,.19,.17,.60,st.engine,12,8);
+  ellipsoid(x,-.105,-.64,.145,.13,.075,st.accent,12,6);
+  ellipsoid(x,-.105,-.70,.095,.09,.025,[.06,.12,.18],12,6);
+ }
+ // خطوط لونية رفيعة أعلى جسم الطائرة
+ ellipsoid(0,.095,-.05,.045,.035,1.18,st.accent,10,6);
+ aircraft.v=new Float32Array(verts);aircraft.c=new Float32Array(cols);
+ gl.bindBuffer(gl.ARRAY_BUFFER,avb);gl.bufferData(gl.ARRAY_BUFFER,aircraft.v,gl.STATIC_DRAW);
+ gl.bindBuffer(gl.ARRAY_BUFFER,acb);gl.bufferData(gl.ARRAY_BUFFER,aircraft.c,gl.STATIC_DRAW);
+}
+
 function buffer(data,loc){let b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,loc===locP?3:3,gl.FLOAT,false,0,0);return b}
 buffer(aircraft.v,locP);buffer(aircraft.c,locC);
 function matMul(a,b){let o=new Float32Array(16);for(let r=0;r<4;r++)for(let c=0;c<4;c++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}
@@ -93,7 +142,7 @@ const wvb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.bufferData(gl.
 const wcb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(worldC),gl.STATIC_DRAW);
 const avb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,avb);gl.bufferData(gl.ARRAY_BUFFER,aircraft.v,gl.STATIC_DRAW);
 const acb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,acb);gl.bufferData(gl.ARRAY_BUFFER,aircraft.c,gl.STATIC_DRAW);
-let state={x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:0,power:0,started:false};let input={x:0,y:0,throttle:false,brake:false};
+buildAircraft(0);\nconst planeChoice=document.getElementById("planeChoice");planeChoice.addEventListener("change",()=>{aircraftStyle=Number(planeChoice.value);buildAircraft(aircraftStyle)});\nlet state={x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:0,power:0,started:false};let input={x:0,y:0,throttle:false,brake:false};
 function resize(){let d=Math.min(devicePixelRatio||1,1.6);canvas.width=Math.floor(innerWidth*d);canvas.height=Math.floor(innerHeight*d);gl.viewport(0,0,canvas.width,canvas.height)}addEventListener('resize',resize);resize();
 function draw(){gl.clearColor(.30,.66,.88,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);let cp=Math.cos(state.pitch),sp=Math.sin(state.pitch),cy=Math.cos(state.yaw),sy=Math.sin(state.yaw);let forward=[sy*cp,sp,-cy*cp],right=[cy,0,sy];let eye=[state.x-forward[0]*8+right[0]*1,state.y+3.3,state.z-forward[2]*8+right[2]*1],target=[state.x+forward[0]*4,state.y+forward[1]*4,state.z+forward[2]*4];let vp=matMul(perspective(1.0,canvas.width/canvas.height,.1,1700),look(eye,target,[0,1,0]));
 gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locP);gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locC);gl.uniformMatrix4fv(locM,false,vp);gl.drawArrays(gl.TRIANGLES,0,worldV.length/3);
