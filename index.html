@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#071321"><title>Fling 3D | لعبة الطيران</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071321;font-family:system-ui,Arial;color:#fff;touch-action:none}canvas{display:block;width:100%;height:100%;touch-action:none}#hud{position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pill{background:#071321b8;border:1px solid #ffffff2b;border-radius:14px;padding:8px 12px;backdrop-filter:blur(8px);font-size:12px}.pill b{font-size:17px;display:block}.controls{position:absolute;bottom:16px;left:0;right:0;display:flex;justify-content:space-between;align-items:end;padding:0 16px;direction:ltr}.stick{width:126px;height:126px;border-radius:50%;border:2px solid #ffffff70;background:#07132166;position:relative;pointer-events:auto;touch-action:none}.knob{position:absolute;width:48px;height:48px;border-radius:50%;background:#eaf7ffdd;border:2px solid #fff;left:37px;top:37px;box-shadow:0 3px 16px #0008}.rightControls{display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:auto}.btn{border:1px solid #ffffff75;background:#071321bb;color:#fff;border-radius:16px;padding:12px 16px;font-weight:700;min-width:92px;touch-action:none}.btn:active,.btn.on{background:#087fc9}.bar{height:7px;width:120px;border-radius:9px;background:#ffffff55;overflow:hidden}.fill{height:100%;width:65%;background:#47d7ff}.label{font-size:11px;text-align:center;margin-bottom:4px}.center{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(#061426aa,#061426dd);pointer-events:auto}.panel{width:min(90vw,430px);padding:26px;border:1px solid #ffffff35;border-radius:24px;background:#0a1c30ee;text-align:center;box-shadow:0 20px 70px #0008}.panel h1{font-size:34px;margin:0 0 8px}.panel p{color:#c5d9e8;line-height:1.7}.primary{background:linear-gradient(120deg,#0ca6e9,#1766d2);border:0;border-radius:14px;color:white;font-weight:800;font-size:17px;padding:14px 24px;width:100%;margin-top:12px}.small{font-size:11px;color:#9bb4c8}.hidden{display:none!important}
+</style></head>
+<body><canvas id="gl"></canvas>
+<div id="hud">
+ <div class="top"><div class="pill">السرعة <b><span id="speed">0</span> km/h</b></div><div class="pill">الارتفاع <b><span id="alt">1200</span> m</b></div><div class="pill">Fling 3D <b id="status">جاهز للإقلاع</b></div></div>
+ <div class="controls"><div id="stick" class="stick"><div id="knob" class="knob"></div></div><div class="rightControls"><div><div class="label">قوة المحرك</div><div class="bar"><div class="fill" id="power"></div></div></div><button class="btn" id="throttle">زيادة السرعة +</button><button class="btn" id="brake">فرامل</button><button class="btn" id="reset">إعادة</button></div></div>
+</div>
+<div class="center" id="menu"><div class="panel"><h1>✈ FLING 3D</h1><p>حلّق فوق الجزر والجبال، وتحكّم بالطائرة بعصا اللمس. حرّك العصا للتوجيه واستخدم زر المحرك لزيادة السرعة.</p><button class="primary" id="start">ابدأ الطيران</button><p class="small">نسخة تجريبية تعمل دون مكتبات خارجية. أفضل أداء حسب إمكانيات جهازك.</p></div></div>
+<script>
+(()=>{
+const canvas=document.getElementById('gl'),gl=canvas.getContext('webgl',{antialias:true,alpha:false})||canvas.getContext('experimental-webgl');
+if(!gl){document.getElementById('status').textContent='WebGL غير مدعوم';return}
+const vs=`attribute vec3 p; attribute vec3 c; uniform mat4 mvp; varying vec3 v; void main(){v=c;gl_Position=mvp*vec4(p,1.);}`;
+const fs=`precision mediump float; varying vec3 v; void main(){gl_FragColor=vec4(v,1.);}`;
+function shader(type,src){let s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s}
+let prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);gl.useProgram(prog);
+const locP=gl.getAttribLocation(prog,'p'),locC=gl.getAttribLocation(prog,'c'),locM=gl.getUniformLocation(prog,'mvp');
+let verts=[],cols=[];
+function tri(a,b,c,col){for(let v of [a,b,c]){verts.push(...v);cols.push(...col)}}
+function quad(a,b,c,d,col){tri(a,b,c,col);tri(a,c,d,col)}
+function cube(cx,cy,cz,sx,sy,sz,col){let x=cx,y=cy,z=cz,X=x+sx,Y=y+sy,Z=z+sz;let a=[x,y,z],b=[X,y,z],c=[X,Y,z],d=[x,Y,z],e=[x,y,Z],f=[X,y,Z],g=[X,Y,Z],h=[x,Y,Z];quad(a,b,c,d,col);quad(e,h,g,f,col);quad(a,e,f,b,col);quad(d,c,g,h,col);quad(a,d,h,e,col);quad(b,f,g,c,col)}
+// aircraft, with fuselage, wings, tail and twin engines
+cube(-.12,-.10,-1.25,.24,.20,2.5,[.86,.9,.95]);
+cube(-2.05,-.04,-.35,4.1,.10,.72,[.14,.55,.83]);
+cube(-.75,.02,-.45,1.5,.05,.5,[.95,.45,.12]);
+cube(-.75,-.02,1.0,1.5,.08,.48,[.16,.62,.86]);
+cube(-.10,.08,.88,.20,.42,.50,[.92,.95,1]);
+cube(-.95,-.16,-.35,.28,.18,1.25,[.08,.13,.19]);cube(.67,-.16,-.35,.28,.18,1.25,[.08,.13,.19]);
+// windshield
+cube(-.105,.10,-.70,.21,.12,.46,[.06,.20,.29]);
+let aircraft={v:new Float32Array(verts),c:new Float32Array(cols)};
+function buffer(data,loc){let b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,loc===locP?3:3,gl.FLOAT,false,0,0);return b}
+buffer(aircraft.v,locP);buffer(aircraft.c,locC);
+function matMul(a,b){let o=new Float32Array(16);for(let r=0;r<4;r++)for(let c=0;c<4;c++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}
+function perspective(fov,asp,n,f){let t=1/Math.tan(fov/2);return new Float32Array([t/asp,0,0,0,0,t,0,0,0,0,(f+n)/(n-f),-1,0,0,2*f*n/(n-f),0])}
+function look(eye,center,up){let norm=v=>{let l=Math.hypot(...v)||1;return v.map(x=>x/l)},sub=(a,b)=>a.map((x,i)=>x-b[i]),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];let z=norm(sub(eye,center)),x=norm(cross(up,z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-x.reduce((s,v,i)=>s+v*eye[i],0),-y.reduce((s,v,i)=>s+v*eye[i],0),-z.reduce((s,v,i)=>s+v*eye[i],0),1])}
+let worldV=[],worldC=[];function wtri(a,b,c,col){for(let v of [a,b,c]){worldV.push(...v);worldC.push(...col)}}
+function island(x,z,r,h){let n=9,ring=[];for(let i=0;i<n;i++){let a=i/n*Math.PI*2,rr=r*(.72+Math.random()*.45);ring.push([x+Math.cos(a)*rr,0,z+Math.sin(a)*rr])}for(let i=0;i<n;i++){let a=ring[i],b=ring[(i+1)%n],peak=[x,h,z];wtri(a,b,peak,[.18,.48,.28]);wtri([a[0],-.1,a[2]],[b[0],-.1,b[2]],[b[0],0,b[2]],[.24,.32,.25])}wtri([x-r*.5,h*.65,z],[x+r*.5,h*.65,z],[x,h*1.35,z],[.72,.76,.78])}
+for(let i=0;i<30;i++)island((Math.random()-.5)*100,(Math.random()-.5)*180,3+Math.random()*7,2+Math.random()*7);
+const wvb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(worldV),gl.STATIC_DRAW);
+const wcb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(worldC),gl.STATIC_DRAW);
+let state={x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:22,power:.55,started:false};let input={x:0,y:0,throttle:false,brake:false};
+function resize(){let d=Math.min(devicePixelRatio||1,1.6);canvas.width=Math.floor(innerWidth*d);canvas.height=Math.floor(innerHeight*d);gl.viewport(0,0,canvas.width,canvas.height)}addEventListener('resize',resize);resize();
+function draw(){gl.clearColor(.30,.66,.88,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);let cp=Math.cos(state.pitch),sp=Math.sin(state.pitch),cy=Math.cos(state.yaw),sy=Math.sin(state.yaw);let forward=[sy*cp,sp,-cy*cp],right=[cy,0,sy];let eye=[state.x-forward[0]*8+right[0]*1,state.y+3.3,state.z-forward[2]*8+right[2]*1],target=[state.x+forward[0]*4,state.y+forward[1]*4,state.z+forward[2]*4];let vp=matMul(perspective(1.0,canvas.width/canvas.height,.1,300),look(eye,target,[0,1,0]));
+gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locP);gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locC);gl.uniformMatrix4fv(locM,false,vp);gl.drawArrays(gl.TRIANGLES,0,worldV.length/3);
+// aircraft model view transform
+let model=matMul(vp,matMul(translate(state.x,state.y,state.z),matMul(rotY(state.yaw),matMul(rotZ(state.roll),rotX(state.pitch)))));
+gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,aircraft.v,gl.STATIC_DRAW);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,aircraft.c,gl.STATIC_DRAW);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.uniformMatrix4fv(locM,false,model);gl.drawArrays(gl.TRIANGLES,0,aircraft.v.length/3)}
+function translate(x,y,z){let m=new Float32Array(16);m[0]=m[5]=m[10]=m[15]=1;m[12]=x;m[13]=y;m[14]=z;return m}
+function rotY(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1])}
+function rotX(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1])}
+function rotZ(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1])}
+let last=0;function loop(t){let dt=Math.min((t-last)/1000||0,.04);last=t;if(state.started){state.power=Math.max(.12,Math.min(1,state.power+(input.throttle?.42:0)*dt-(input.brake?.7:0)*dt));state.speed+=(state.power*32-state.speed*.38)*dt;state.yaw+=input.x*dt*.75;state.roll+=( -input.x*.65-state.roll)*dt*2.8;state.pitch+=( -input.y*.55-state.pitch)*dt*2;state.y+=Math.max(-2,Math.min(2,state.pitch*state.speed*.12))*dt;state.z-=Math.cos(state.yaw)*state.speed*.12;state.x+=Math.sin(state.yaw)*state.speed*.12;state.y=Math.max(1,Math.min(55,state.y));document.getElementById('speed').textContent=Math.round(state.speed*3.6);document.getElementById('alt').textContent=Math.round(900+state.y*35);document.getElementById('power').style.width=(state.power*100)+'%'}draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+const stick=document.getElementById('stick'),knob=document.getElementById('knob');let pointer=null;function move(e){let r=stick.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),max=39,l=Math.hypot(dx,dy);if(l>max){dx=dx/l*max;dy=dy/l*max}knob.style.transform=`translate(${dx}px,${dy}px)`;input.x=dx/max;input.y=dy/max}stick.addEventListener('pointerdown',e=>{pointer=e.pointerId;stick.setPointerCapture(pointer);move(e)});stick.addEventListener('pointermove',e=>{if(e.pointerId===pointer)move(e)});function release(){pointer=null;input.x=input.y=0;knob.style.transform='translate(0,0)'}stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
+let th=document.getElementById('throttle'),br=document.getElementById('brake');function hold(el,key){el.addEventListener('pointerdown',e=>{e.preventDefault();input[key]=true;el.classList.add('on')});['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,()=>{input[key]=false;el.classList.remove('on')}))}hold(th,'throttle');hold(br,'brake');
+function start(){state.started=true;document.getElementById('menu').classList.add('hidden');document.getElementById('status').textContent='في الجو'}document.getElementById('start').addEventListener('click',start);document.getElementById('reset').addEventListener('click',()=>{Object.assign(state,{x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:22,power:.55,started:true});document.getElementById('status').textContent='إعادة الطيران'}); 
+})();
+</script></body></html>
