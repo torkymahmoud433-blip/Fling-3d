@@ -11,7 +11,7 @@
  <div class="top"><div class="pill">السرعة <b><span id="speed">0</span> km/h</b></div><div class="pill">الارتفاع <b><span id="alt">1200</span> m</b></div><div class="pill">المرحلة <b id="level">1 / 5</b></div><div class="pill">Fling 3D <b id="status">متوقف على المدرج</b></div></div>
  <div class="controls"><div id="stick" class="stick"><div id="knob" class="knob"></div></div><div class="rightControls"><div><div class="label">قوة المحرك</div><div class="bar"><div class="fill" id="power"></div></div></div><button class="btn" id="throttle">زيادة السرعة +</button><button class="btn" id="brake">فرامل</button><button class="btn" id="reset">إعادة</button></div></div>
 </div>
-<aside id="flightPanel" style="position:fixed;top:78px;right:12px;z-index:20;width:min(190px,46vw);padding:12px;border:1px solid #ffffff45;border-radius:16px;background:#071a2be8;backdrop-filter:blur(10px);box-shadow:0 8px 28px #0008;pointer-events:auto"><div style="font-weight:800;font-size:15px;margin-bottom:8px">✈ الطائرة</div><select id="planeChoice" aria-label="اختيار الطائرة" style="width:100%;padding:10px 6px;border-radius:10px;background:#102b45;color:white;border:1px solid #168ac4;font-size:13px"><option value="0">الطائرة الأساسية</option><option value="1">المقاتلة الخفيفة</option><option value="2">طائرة النقل</option><option value="3">المقاتلة النفاثة</option><option value="4">الطائرة الفضائية</option><option value="5">الأسطورية</option></select><button class="primary" id="start" style="font-size:14px;padding:11px 8px;margin-top:9px">ابدأ الطيران</button><div class="small" style="line-height:1.5;margin-top:7px">الطائرة تبدأ ثابتة. اضغط مطولاً على المحرك للتحرك.</div></aside>
+<aside id="flightPanel" style="position:fixed;top:78px;right:12px;z-index:20;width:min(190px,46vw);padding:12px;border:1px solid #ffffff45;border-radius:16px;background:#071a2be8;backdrop-filter:blur(10px);box-shadow:0 8px 28px #0008;pointer-events:auto"><div style="font-weight:800;font-size:15px;margin-bottom:8px">✈ الطائرة</div><select id="planeChoice" aria-label="اختيار الطائرة" style="width:100%;padding:10px 6px;border-radius:10px;background:#102b45;color:white;border:1px solid #168ac4;font-size:13px"><option value="0">Airbus A320</option><option value="1">A320 بدون شعار</option><option value="2">Airbus A350</option><option value="3">A350 بدون شعار</option><option value="4">Airbus A380</option><option value="5">A380 بدون شعار</option><option value="6">Boeing 737</option><option value="7">B737 بدون شعار</option><option value="8">Boeing 787</option><option value="9">B787 بدون شعار</option><option value="10">EVTOL</option><option value="11">EVTOL بدون شعار</option><option value="12">Drone</option><option value="13">Drone بدون شعار</option></select><button class="primary" id="start" style="font-size:14px;padding:11px 8px;margin-top:9px">ابدأ الطيران</button><div class="small" style="line-height:1.5;margin-top:7px">الطائرة تبدأ ثابتة. اضغط مطولاً على المحرك للتحرك.</div></aside>
 <script>
 (()=>{
 const canvas=document.getElementById('gl'),gl=canvas.getContext('webgl',{antialias:true,alpha:false})||canvas.getContext('experimental-webgl');
@@ -151,7 +151,8 @@ function resize(){let d=Math.min(devicePixelRatio||1,1.6);canvas.width=Math.floo
 function draw(){gl.clearColor(.30,.66,.88,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);let cp=Math.cos(state.pitch),sp=Math.sin(state.pitch),cy=Math.cos(state.yaw),sy=Math.sin(state.yaw);let forward=[sy*cp,sp,-cy*cp],right=[cy,0,sy];let eye=[state.x-forward[0]*8+right[0]*1,state.y+3.3,state.z-forward[2]*8+right[2]*1],target=[state.x+forward[0]*4,state.y+forward[1]*4,state.z+forward[2]*4];let vp=matMul(perspective(1.0,canvas.width/canvas.height,.1,1700),look(eye,target,[0,1,0]));
 gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locP);gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locC);gl.uniformMatrix4fv(locM,false,vp);gl.drawArrays(gl.TRIANGLES,0,worldV.length/3);
 // مزامنة كاميرا الطيران مع طبقة الطائرة ثلاثية الأبعاد
-if(window.__flingCameraSync)window.__flingCameraSync(eye,target,state);}
+if(window.__flingCameraSync)window.__flingCameraSync(eye,target,state);
+else {gl.bindBuffer(gl.ARRAY_BUFFER,avb);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locP);gl.bindBuffer(gl.ARRAY_BUFFER,acb);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locC);let model=matMul(translate(state.x,state.y,state.z),matMul(rotY(state.yaw),matMul(rotX(state.pitch),rotZ(state.roll))));gl.uniformMatrix4fv(locM,false,matMul(vp,model));gl.drawArrays(gl.TRIANGLES,0,aircraft.v.length/3);}}
 function translate(x,y,z){let m=new Float32Array(16);m[0]=m[5]=m[10]=m[15]=1;m[12]=x;m[13]=y;m[14]=z;return m}
 function rotY(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1])}
 function rotX(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1])}
@@ -173,7 +174,7 @@ const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(57.2958,i
 scene.add(new THREE.HemisphereLight(0xd9f1ff,0x26313b,2.0));
 const sun=new THREE.DirectionalLight(0xffffff,2.1);sun.position.set(-5,9,7);scene.add(sun);
 const loader=new GLTFLoader();let active=null,loadToken=0;
-const modelFiles=['A320.glb','A350.glb','A380.glb','B737.glb','B787.glb','EVTOL.glb'];
+const modelFiles=['A320.glb','A320_nologo.glb','A350.glb','A350_nologo.glb','A380.glb','A380_nologo.glb','B737.glb','B737_nologo.glb','B787.glb','B787_nologo.glb','EVTOL.glb','EVTOL_nologo.glb','drone.glb','drone_nologo.glb'];
 function setPlane(index){
  const token=++loadToken;
  const url='https://raw.githubusercontent.com/torkymahmoud433-blip/Fling-3d/main/'+modelFiles[index];
@@ -181,17 +182,20 @@ function setPlane(index){
  loader.load(url,g=>{
   if(token!==loadToken)return;
   if(active)scene.remove(active);
-  active=g.scene;
-  const box=new THREE.Box3().setFromObject(active),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
-  active.position.sub(center);
+  const model=new THREE.Group();
+  const meshRoot=g.scene;
+  const box=new THREE.Box3().setFromObject(meshRoot),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+  meshRoot.position.sub(center);
+  // خلي تصحيح الاتجاه على الموديل الداخلي عشان ما يتمسحش مع حركة الطائرة.
+  meshRoot.rotation.y=Math.PI;
+  meshRoot.traverse(o=>{if(o.isMesh){o.frustumCulled=true;o.castShadow=false;o.receiveShadow=false;}});
+  model.add(meshRoot);
   const maxDim=Math.max(size.x,size.y,size.z)||1;
-  active.scale.setScalar(3.5/maxDim);
-  // أغلب نماذج الطائرات تتجه بمحور +Z، تدويرها يجعل المقدمة نحو -Z.
-  active.rotation.y=Math.PI;
-  active.traverse(o=>{if(o.isMesh){o.frustumCulled=true;o.castShadow=false;o.receiveShadow=false;if(o.material){o.material.side=THREE.FrontSide}}});
+  model.scale.setScalar(3.5/maxDim);
+  active=model;
   scene.add(active);
   document.getElementById('status').textContent='الطائرة ثلاثية الأبعاد جاهزة';
- },undefined,e=>{console.error(e);document.getElementById('status').textContent='تعذر تحميل الطائرة 3D';});
+ },undefined,e=>{console.error(e);document.getElementById('status').textContent='تعذر تحميل 3D، عرض الشكل الاحتياطي';});
 }
 window.__flingCameraSync=(eye,target,state)=>{
  camera.position.set(...eye);camera.up.set(0,1,0);camera.lookAt(...target);
