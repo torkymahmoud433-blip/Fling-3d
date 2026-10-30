@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#071321"><title>Fling 3D | لعبة الطيران</title>
 <style>
 :root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071321;font-family:system-ui,Arial;color:#fff;touch-action:none}canvas{display:block;width:100%;height:100%;touch-action:none}#hud{position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.pill{background:#071321b8;border:1px solid #ffffff2b;border-radius:14px;padding:8px 12px;backdrop-filter:blur(8px);font-size:12px}.pill b{font-size:17px;display:block}.controls{position:absolute;bottom:16px;left:0;right:0;display:flex;justify-content:space-between;align-items:end;padding:0 16px;direction:ltr}.stick{width:126px;height:126px;border-radius:50%;border:2px solid #ffffff70;background:#07132166;position:relative;pointer-events:auto;touch-action:none}.knob{position:absolute;width:48px;height:48px;border-radius:50%;background:#eaf7ffdd;border:2px solid #fff;left:37px;top:37px;box-shadow:0 3px 16px #0008}.rightControls{display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:auto}.btn{border:1px solid #ffffff75;background:#071321bb;color:#fff;border-radius:16px;padding:12px 16px;font-weight:700;min-width:92px;touch-action:none}.btn:active,.btn.on{background:#087fc9}.bar{height:7px;width:120px;border-radius:9px;background:#ffffff55;overflow:hidden}.fill{height:100%;width:65%;background:#47d7ff}.label{font-size:11px;text-align:center;margin-bottom:4px}.primary{background:linear-gradient(120deg,#0ca6e9,#1766d2);border:0;border-radius:14px;color:white;font-weight:800;font-size:17px;padding:14px 24px;width:100%;margin-top:12px}.small{font-size:11px;color:#9bb4c8}.hidden{display:none!important}
-</style></head>
+#glbLayer{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}#hud{z-index:3}#flightPanel{z-index:20}</style></head>
 <body><canvas id="gl"></canvas>
 <div id="hud">
  <div class="top"><div class="pill">السرعة <b><span id="speed">0</span> km/h</b></div><div class="pill">الارتفاع <b><span id="alt">1200</span> m</b></div><div class="pill">المرحلة <b id="level">1 / 5</b></div><div class="pill">Fling 3D <b id="status">متوقف على المدرج</b></div></div>
@@ -150,9 +150,8 @@ let input={x:0,y:0,throttle:false,brake:false};
 function resize(){let d=Math.min(devicePixelRatio||1,1.6);canvas.width=Math.floor(innerWidth*d);canvas.height=Math.floor(innerHeight*d);gl.viewport(0,0,canvas.width,canvas.height)}addEventListener('resize',resize);resize();
 function draw(){gl.clearColor(.30,.66,.88,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);let cp=Math.cos(state.pitch),sp=Math.sin(state.pitch),cy=Math.cos(state.yaw),sy=Math.sin(state.yaw);let forward=[sy*cp,sp,-cy*cp],right=[cy,0,sy];let eye=[state.x-forward[0]*8+right[0]*1,state.y+3.3,state.z-forward[2]*8+right[2]*1],target=[state.x+forward[0]*4,state.y+forward[1]*4,state.z+forward[2]*4];let vp=matMul(perspective(1.0,canvas.width/canvas.height,.1,1700),look(eye,target,[0,1,0]));
 gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locP);gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locC);gl.uniformMatrix4fv(locM,false,vp);gl.drawArrays(gl.TRIANGLES,0,worldV.length/3);
-// aircraft model view transform
-let model=matMul(vp,matMul(translate(state.x,state.y,state.z),matMul(rotY(state.yaw),matMul(rotZ(state.roll),rotX(state.pitch)))));
-gl.bindBuffer(gl.ARRAY_BUFFER,avb);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locP);gl.bindBuffer(gl.ARRAY_BUFFER,acb);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locC);gl.uniformMatrix4fv(locM,false,model);gl.drawArrays(gl.TRIANGLES,0,aircraft.v.length/3)}
+// مزامنة كاميرا الطيران مع طبقة الطائرة ثلاثية الأبعاد
+if(window.__flingCameraSync)window.__flingCameraSync(eye,target,state);}
 function translate(x,y,z){let m=new Float32Array(16);m[0]=m[5]=m[10]=m[15]=1;m[12]=x;m[13]=y;m[14]=z;return m}
 function rotY(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1])}
 function rotX(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1])}
@@ -162,4 +161,45 @@ const stick=document.getElementById('stick'),knob=document.getElementById('knob'
 let th=document.getElementById('throttle'),br=document.getElementById('brake');function hold(el,key){el.addEventListener('pointerdown',e=>{e.preventDefault();input[key]=true;el.classList.add('on')});['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,()=>{input[key]=false;el.classList.remove('on')}))}hold(th,'throttle');hold(br,'brake');
 function start(){state.started=true;state.speed=0;state.power=0;document.getElementById('status').textContent='على المدرج - جاهز';document.getElementById('start').textContent='الطيران يعمل';}document.getElementById('start').addEventListener('click',start);document.getElementById('reset').addEventListener('click',()=>{Object.assign(state,{x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:0,power:0,started:true});document.getElementById('level').textContent='1 / 5';document.getElementById('status').textContent='على المدرج - جاهز'}); 
 })();
-</script></body></html>
+</script>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+const layer=document.createElement('canvas');layer.id='glbLayer';document.body.insertBefore(layer,document.getElementById('hud'));
+const renderer=new THREE.WebGLRenderer({canvas:layer,alpha:true,antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));renderer.setSize(innerWidth,innerHeight,false);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(57.2958,innerWidth/innerHeight,.1,1700);
+scene.add(new THREE.HemisphereLight(0xd9f1ff,0x26313b,2.0));
+const sun=new THREE.DirectionalLight(0xffffff,2.1);sun.position.set(-5,9,7);scene.add(sun);
+const loader=new GLTFLoader();let active=null,loadToken=0;
+const modelFiles=['A320.glb','A350.glb','A380.glb','B737.glb','B787.glb','EVTOL.glb'];
+function setPlane(index){
+ const token=++loadToken;
+ const url='https://raw.githubusercontent.com/torkymahmoud433-blip/Fling-3d/main/'+modelFiles[index];
+ document.getElementById('status').textContent='تحميل الطائرة 3D...';
+ loader.load(url,g=>{
+  if(token!==loadToken)return;
+  if(active)scene.remove(active);
+  active=g.scene;
+  const box=new THREE.Box3().setFromObject(active),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+  active.position.sub(center);
+  const maxDim=Math.max(size.x,size.y,size.z)||1;
+  active.scale.setScalar(3.5/maxDim);
+  // أغلب نماذج الطائرات تتجه بمحور +Z، تدويرها يجعل المقدمة نحو -Z.
+  active.rotation.y=Math.PI;
+  active.traverse(o=>{if(o.isMesh){o.frustumCulled=true;o.castShadow=false;o.receiveShadow=false;if(o.material){o.material.side=THREE.FrontSide}}});
+  scene.add(active);
+  document.getElementById('status').textContent='الطائرة ثلاثية الأبعاد جاهزة';
+ },undefined,e=>{console.error(e);document.getElementById('status').textContent='تعذر تحميل الطائرة 3D';});
+}
+window.__flingCameraSync=(eye,target,state)=>{
+ camera.position.set(...eye);camera.up.set(0,1,0);camera.lookAt(...target);
+ if(active){active.position.set(state.x,state.y,state.z);active.rotation.order='YXZ';active.rotation.y=state.yaw;active.rotation.z=state.roll;active.rotation.x=state.pitch;}
+ renderer.render(scene,camera);
+};
+document.getElementById('planeChoice').addEventListener('change',e=>setPlane(Number(e.target.value)));
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false);renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.25));});
+setPlane(Number(document.getElementById('planeChoice').value));
+</script>
+</body></html>
