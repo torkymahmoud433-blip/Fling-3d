@@ -8,10 +8,10 @@
 </style></head>
 <body><canvas id="gl"></canvas>
 <div id="hud">
- <div class="top"><div class="pill">السرعة <b><span id="speed">0</span> km/h</b></div><div class="pill">الارتفاع <b><span id="alt">1200</span> m</b></div><div class="pill">Fling 3D <b id="status">جاهز للإقلاع</b></div></div>
+ <div class="top"><div class="pill">السرعة <b><span id="speed">0</span> km/h</b></div><div class="pill">الارتفاع <b><span id="alt">1200</span> m</b></div><div class="pill">المرحلة <b id="level">1 / 5</b></div><div class="pill">Fling 3D <b id="status">متوقف على المدرج</b></div></div>
  <div class="controls"><div id="stick" class="stick"><div id="knob" class="knob"></div></div><div class="rightControls"><div><div class="label">قوة المحرك</div><div class="bar"><div class="fill" id="power"></div></div></div><button class="btn" id="throttle">زيادة السرعة +</button><button class="btn" id="brake">فرامل</button><button class="btn" id="reset">إعادة</button></div></div>
 </div>
-<div class="center" id="menu"><div class="panel"><h1>✈ FLING 3D</h1><p>حلّق فوق الجزر والجبال، وتحكّم بالطائرة بعصا اللمس. حرّك العصا للتوجيه واستخدم زر المحرك لزيادة السرعة.</p><button class="primary" id="start">ابدأ الطيران</button><p class="small">نسخة تجريبية تعمل دون مكتبات خارجية. أفضل أداء حسب إمكانيات جهازك.</p></div></div>
+<div class="center" id="menu"><div class="panel"><h1>✈ FLING 3D</h1><p>حلّق فوق الجزر والجبال، وتحكّم بالطائرة بعصا اللمس. حرّك العصا للتوجيه واستخدم زر المحرك لزيادة السرعة.</p><button class="primary" id="start">ابدأ الطيران</button><p class="small">ابدأ والطائرة ثابتة. اضغط مطولاً على زيادة السرعة للتحرك، وكلما قطعت مسافة تفتح مرحلة جديدة.</p></div></div>
 <script>
 (()=>{
 const canvas=document.getElementById('gl'),gl=canvas.getContext('webgl',{antialias:true,alpha:false})||canvas.getContext('experimental-webgl');
@@ -40,7 +40,7 @@ buffer(aircraft.v,locP);buffer(aircraft.c,locC);
 function matMul(a,b){let o=new Float32Array(16);for(let r=0;r<4;r++)for(let c=0;c<4;c++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}
 function perspective(fov,asp,n,f){let t=1/Math.tan(fov/2);return new Float32Array([t/asp,0,0,0,0,t,0,0,0,0,(f+n)/(n-f),-1,0,0,2*f*n/(n-f),0])}
 function look(eye,center,up){let norm=v=>{let l=Math.hypot(...v)||1;return v.map(x=>x/l)},sub=(a,b)=>a.map((x,i)=>x-b[i]),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];let z=norm(sub(eye,center)),x=norm(cross(up,z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-x.reduce((s,v,i)=>s+v*eye[i],0),-y.reduce((s,v,i)=>s+v*eye[i],0),-z.reduce((s,v,i)=>s+v*eye[i],0),1])}
-let worldV=[],worldC=[];function wtri(a,b,c,col){for(let v of [a,b,c]){worldV.push(...v);worldC.push(...col)}}
+let worldV=[],worldC=[];function wtri(a,b,c,col){for(let v of [a,b,c]){worldV.push(v[0]*1.5,v[1],v[2]*3.2);worldC.push(...col)}}
 function island(x,z,r,h){let n=9,ring=[];for(let i=0;i<n;i++){let a=i/n*Math.PI*2,rr=r*(.72+Math.random()*.45);ring.push([x+Math.cos(a)*rr,0,z+Math.sin(a)*rr])}for(let i=0;i<n;i++){let a=ring[i],b=ring[(i+1)%n],peak=[x,h,z];wtri(a,b,peak,[.18,.48,.28]);wtri([a[0],-.1,a[2]],[b[0],-.1,b[2]],[b[0],0,b[2]],[.24,.32,.25])}wtri([x-r*.5,h*.65,z],[x+r*.5,h*.65,z],[x,h*1.35,z],[.72,.76,.78])}
 
 // عالم ممتد مقسّم إلى سهول خضراء ثم جبال ثم مدينة وصحراء
@@ -60,9 +60,9 @@ function hill(x,z,r,h,col){
  wtri([x+Math.cos(a)*r, -2.8,z+Math.sin(a)*r],[x+Math.cos(b)*r,-2.8,z+Math.sin(b)*r],[x,h,z],col)}
 }
 // أرض متصلة تحت مسار الطائرة
-for(let iz=0;iz<70;iz++)for(let ix=0;ix<28;ix++){
- let z=30-iz*5,x=-70+ix*5;
- let biome=iz<22?0:iz<42?1:iz<55?2:3;
+for(let iz=0;iz<95;iz++)for(let ix=0;ix<40;ix++){
+ let z=30-iz*5,x=-100+ix*5;
+ let biome=iz<28?0:iz<55?1:iz<77?2:3;
  let y=-3+Math.sin(ix*.31+iz*.17)*.22+Math.cos(iz*.22)*.18;
  let col=biome===0?[.22,.48,.20]:biome===1?[.42,.39,.28]:biome===2?[.30,.38,.34]:[.68,.52,.29];
  let a=[x,y,z],b=[x+5,y,z],cc=[x+5,y,z-5],d=[x,y,z-5];
@@ -91,20 +91,22 @@ for(let i=0;i<22;i++){let z=-255-Math.random()*65,x=(Math.random()<.5?-1:1)*(16+
 
 const wvb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(worldV),gl.STATIC_DRAW);
 const wcb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(worldC),gl.STATIC_DRAW);
-let state={x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:22,power:.55,started:false};let input={x:0,y:0,throttle:false,brake:false};
+const avb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,avb);gl.bufferData(gl.ARRAY_BUFFER,aircraft.v,gl.STATIC_DRAW);
+const acb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,acb);gl.bufferData(gl.ARRAY_BUFFER,aircraft.c,gl.STATIC_DRAW);
+let state={x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:0,power:0,started:false};let input={x:0,y:0,throttle:false,brake:false};
 function resize(){let d=Math.min(devicePixelRatio||1,1.6);canvas.width=Math.floor(innerWidth*d);canvas.height=Math.floor(innerHeight*d);gl.viewport(0,0,canvas.width,canvas.height)}addEventListener('resize',resize);resize();
-function draw(){gl.clearColor(.30,.66,.88,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);let cp=Math.cos(state.pitch),sp=Math.sin(state.pitch),cy=Math.cos(state.yaw),sy=Math.sin(state.yaw);let forward=[sy*cp,sp,-cy*cp],right=[cy,0,sy];let eye=[state.x-forward[0]*8+right[0]*1,state.y+3.3,state.z-forward[2]*8+right[2]*1],target=[state.x+forward[0]*4,state.y+forward[1]*4,state.z+forward[2]*4];let vp=matMul(perspective(1.0,canvas.width/canvas.height,.1,300),look(eye,target,[0,1,0]));
+function draw(){gl.clearColor(.30,.66,.88,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);let cp=Math.cos(state.pitch),sp=Math.sin(state.pitch),cy=Math.cos(state.yaw),sy=Math.sin(state.yaw);let forward=[sy*cp,sp,-cy*cp],right=[cy,0,sy];let eye=[state.x-forward[0]*8+right[0]*1,state.y+3.3,state.z-forward[2]*8+right[2]*1],target=[state.x+forward[0]*4,state.y+forward[1]*4,state.z+forward[2]*4];let vp=matMul(perspective(1.0,canvas.width/canvas.height,.1,1700),look(eye,target,[0,1,0]));
 gl.bindBuffer(gl.ARRAY_BUFFER,wvb);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locP);gl.bindBuffer(gl.ARRAY_BUFFER,wcb);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locC);gl.uniformMatrix4fv(locM,false,vp);gl.drawArrays(gl.TRIANGLES,0,worldV.length/3);
 // aircraft model view transform
 let model=matMul(vp,matMul(translate(state.x,state.y,state.z),matMul(rotY(state.yaw),matMul(rotZ(state.roll),rotX(state.pitch)))));
-gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,aircraft.v,gl.STATIC_DRAW);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,aircraft.c,gl.STATIC_DRAW);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.uniformMatrix4fv(locM,false,model);gl.drawArrays(gl.TRIANGLES,0,aircraft.v.length/3)}
+gl.bindBuffer(gl.ARRAY_BUFFER,avb);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locP);gl.bindBuffer(gl.ARRAY_BUFFER,acb);gl.vertexAttribPointer(locC,3,gl.FLOAT,false,0,0);gl.enableVertexAttribArray(locC);gl.uniformMatrix4fv(locM,false,model);gl.drawArrays(gl.TRIANGLES,0,aircraft.v.length/3)}
 function translate(x,y,z){let m=new Float32Array(16);m[0]=m[5]=m[10]=m[15]=1;m[12]=x;m[13]=y;m[14]=z;return m}
 function rotY(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1])}
 function rotX(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1])}
 function rotZ(a){let c=Math.cos(a),s=Math.sin(a);return new Float32Array([c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1])}
-let last=0;function loop(t){let dt=Math.min((t-last)/1000||0,.04);last=t;if(state.started){state.power=Math.max(.12,Math.min(1,state.power+(input.throttle?.42:0)*dt-(input.brake?.7:0)*dt));state.speed+=(state.power*32-state.speed*.38)*dt;state.yaw+=input.x*dt*.75;state.roll+=( -input.x*.65-state.roll)*dt*2.8;state.pitch+=( -input.y*.55-state.pitch)*dt*2;state.y+=Math.max(-2,Math.min(2,state.pitch*state.speed*.12))*dt;state.z-=Math.cos(state.yaw)*state.speed*.12;state.x+=Math.sin(state.yaw)*state.speed*.12;state.y=Math.max(1,Math.min(55,state.y));document.getElementById('speed').textContent=Math.round(state.speed*3.6);document.getElementById('alt').textContent=Math.round(900+state.y*35);document.getElementById('power').style.width=(state.power*100)+'%'}draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+const levelNames=['السهول الخضراء','جبال الصقور','مدينة السحاب','الصحراء الذهبية','وادي السماء'];let last=0;function loop(t){let dt=Math.min((t-last)/1000||0,.04);last=t;if(state.started){state.power=Math.max(0,Math.min(1,state.power+(input.throttle ? .34 : -.10)*dt-(input.brake ? .75 : 0)*dt));state.speed=Math.max(0,Math.min(50,state.speed+(state.power*14-state.speed*.82)*dt));state.yaw+=input.x*dt*.48;state.roll+=(-input.x*.48-state.roll)*dt*2.1;state.pitch+=(-input.y*.38-state.pitch)*dt*1.7;state.y+=Math.max(-1.2,Math.min(1.2,state.pitch*state.speed*.045))*dt;state.z-=Math.cos(state.yaw)*state.speed*.12;state.x+=Math.sin(state.yaw)*state.speed*.12;state.y=Math.max(1,Math.min(55,state.y));let distance=Math.max(0,-state.z),level=Math.min(5,Math.floor(distance/300)+1);document.getElementById('level').textContent=level+' / 5';document.getElementById('status').textContent=levelNames[level-1];document.getElementById('speed').textContent=Math.round(state.speed*3.6);document.getElementById('alt').textContent=Math.round(900+state.y*35);document.getElementById('power').style.width=(state.power*100)+'%'}draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
 const stick=document.getElementById('stick'),knob=document.getElementById('knob');let pointer=null;function move(e){let r=stick.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),max=39,l=Math.hypot(dx,dy);if(l>max){dx=dx/l*max;dy=dy/l*max}knob.style.transform=`translate(${dx}px,${dy}px)`;input.x=dx/max;input.y=dy/max}stick.addEventListener('pointerdown',e=>{pointer=e.pointerId;stick.setPointerCapture(pointer);move(e)});stick.addEventListener('pointermove',e=>{if(e.pointerId===pointer)move(e)});function release(){pointer=null;input.x=input.y=0;knob.style.transform='translate(0,0)'}stick.addEventListener('pointerup',release);stick.addEventListener('pointercancel',release);
 let th=document.getElementById('throttle'),br=document.getElementById('brake');function hold(el,key){el.addEventListener('pointerdown',e=>{e.preventDefault();input[key]=true;el.classList.add('on')});['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,()=>{input[key]=false;el.classList.remove('on')}))}hold(th,'throttle');hold(br,'brake');
-function start(){state.started=true;document.getElementById('menu').classList.add('hidden');document.getElementById('status').textContent='في الجو'}document.getElementById('start').addEventListener('click',start);document.getElementById('reset').addEventListener('click',()=>{Object.assign(state,{x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:22,power:.55,started:true});document.getElementById('status').textContent='إعادة الطيران'}); 
+function start(){state.started=true;state.speed=0;state.power=0;document.getElementById('menu').classList.add('hidden');document.getElementById('status').textContent='على المدرج - جاهز';}document.getElementById('start').addEventListener('click',start);document.getElementById('reset').addEventListener('click',()=>{Object.assign(state,{x:0,y:4,z:0,yaw:0,pitch:0,roll:0,speed:0,power:0,started:true});document.getElementById('level').textContent='1 / 5';document.getElementById('status').textContent='على المدرج - جاهز'}); 
 })();
 </script></body></html>
