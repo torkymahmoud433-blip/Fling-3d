@@ -1,28 +1,29 @@
-# Pocket Drive
+# Pocket Drive 3D
 
-A mobile-first HTML5 driving game prototype built from scratch for the Fling-3d repository.
+A private, original driving-game experiment inspired by the feel and mission structure of mobile driving games.
 
 ## Run
-Open `index.html` in a modern browser, or enable GitHub Pages for the repository. The service worker enables offline play after the first successful load on a secure origin (HTTPS/localhost).
+Open through a local web server or GitHub Pages. The first launch needs an internet connection to load Three.js from jsDelivr. The browser may retain the library in its cache, but fully offline first launch is not supported yet.
 
 ## Controls
 - Left / right: steer
 - Gas: accelerate
 - Brake: slow down
 - Pause: pause the drive
+- Keyboard: arrows, A/D, Space
 
-Keyboard controls are also supported: arrow keys, A/D, and Space.
+## Current build
+- Real-time 3D scene rendered with Three.js / WebGL
+- Follow camera behind a modeled player car
+- Road, lane markings, sidewalks, buildings, trees, and traffic vehicles
+- Touch controls designed for mobile screens
+- Basic acceleration, braking, steering, traffic movement, and collision end-state
+- Responsive rendering and a lightweight scene intended for mobile testing
 
-## Current prototype
-- Responsive canvas renderer with a pseudo-3D road and city scenery
-- Traffic cars, lane steering, speed, distance, score, and collision detection
-- Touch-friendly controls and safe-area support
-- PWA manifest and service-worker cache
+## Next
+1. Tune steering, braking, acceleration, and camera feel.
+2. Add a dashboard / first-person cockpit camera.
+3. Add parking missions, checkpoints, traffic rules, and mission scoring.
+4. Add original vehicle models, textures, and sound effects.
 
-## Roadmap
-1. Improve vehicle handling and collision/traffic behavior.
-2. Add missions: parking, checkpoints, timed delivery, and traffic rules.
-3. Add vehicle selection, upgrades, sound, and settings.
-4. Replace the prototype renderer with a more detailed 3D scene as performance and asset budgets are tested.
-
-This is an original fan-inspired prototype. It does not include Dr. Driving source code, artwork, models, or audio.
+This prototype uses original procedural geometry and does not bundle Dr. Driving source code or extracted proprietary assets.
