@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#101923">
+<title>Pocket Drive | Roundabout Preview</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9bb9c4;font-family:system-ui,Arial;color:#fff;touch-action:none}canvas{display:block;width:100%;height:100%}
+.top{position:fixed;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}.badge,.help{background:#091521c9;border:1px solid #ffffff35;border-radius:12px;padding:10px 13px;backdrop-filter:blur(8px)}.badge{font-weight:900;letter-spacing:1px}.badge span{color:#c9f36a}.help{font-size:11px;color:#d7e0e4}.bottom{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:#091521c9;border:1px solid #ffffff35;border-radius:14px;padding:9px 14px;font-size:11px;color:#d7e0e4;white-space:nowrap;text-align:center}.back{position:fixed;left:12px;bottom:12px;border:1px solid #ffffff44;background:#091521d9;color:white;border-radius:12px;padding:11px 14px;font-weight:800;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="top"><div class="badge">POCKET <span>DRIVE</span> · ROUNDABOUT</div><div class="help">اسحب للتدوير · قرّب وبعّد بإصبعين</div></div>
+<div class="bottom">3D ROAD KIT STUDY · 3×3 MAIN TILE PROPORTIONS</div>
+<a class="back" href="./index.html">رجوع للعبة</a>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=>{
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9bb9c4);scene.fog=new THREE.Fog(0x9bb9c4,55,115);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,250);camera.position.set(25,24,29);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xeaf6ff,0x64704e,2.1));const sun=new THREE.DirectionalLight(0xffedcf,2.2);sun.position.set(-25,38,18);sun.castShadow=true;sun.shadow.mapSize.set(1536,1536);scene.add(sun);
+const mat=(c,r=.85)=>new THREE.MeshStandardMaterial({color:c,roughness:r});
+const grass=mat(0x718d5d),road=mat(0x343a3d),side=mat(0xbdb8aa),white=mat(0xf0eadb),yellow=mat(0xe7c65c),green=mat(0x5c8750),trunk=mat(0x75543a),buildingMats=[0xb5a58c,0x89999a,0xc1b7a4,0x8c9297,0xb18f79].map(c=>mat(c));
+function addMesh(g,m,x,y,z,shadow=true){const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=shadow;o.receiveShadow=true;scene.add(o);return o}
+function box(w,h,d,m,x,y,z){return addMesh(new THREE.BoxGeometry(w,h,d),m,x,y,z)}
+box(100,.35,100,grass,0,-.28,0);
+function ring(ro,ri,y,m){const s=new THREE.Shape();s.absarc(0,0,ro,0,Math.PI*2,false);const hole=new THREE.Path();hole.absarc(0,0,ri,0,Math.PI*2,true);s.holes.push(hole);const g=new THREE.ExtrudeGeometry(s,{depth:.16,bevelEnabled:false,curveSegments:96});const o=addMesh(g,m,0,y,0);o.rotation.x=-Math.PI/2;return o}
+const R=10.5,r=5.7;
+ring(R,r,-.12,road);
+for(let a=0;a<4;a++){const rot=a*Math.PI/2;const x=Math.sin(rot),z=Math.cos(rot);const len=18;const roadPart=box(5.2,.16,len,road,x*(R+len/2-1),-.1,z*(R+len/2-1));roadPart.rotation.y=-rot}
+ring(12.0,10.55,-.04,side);ring(5.65,4.95,-.025,side);
+addMesh(new THREE.CylinderGeometry(4.92,4.92,.24,64),green,0,.02,0);
+addMesh(new THREE.CylinderGeometry(4.3,4.3,.025,64),mat(0x78985d),0,.15,0,false);
+// Central landscaping
+for(let i=0;i<9;i++){const a=i*Math.PI*2/9,rad=2.6+(i%2)*.8;const x=Math.cos(a)*rad,z=Math.sin(a)*rad;addMesh(new THREE.CylinderGeometry(.12,.17,.7,7),trunk,x,.52,z);const crown=addMesh(new THREE.IcosahedronGeometry(.72,1),mat(i%2?0x3f7445:0x58834c),x,1.2,z);crown.scale.y=1.15}
+addMesh(new THREE.CylinderGeometry(.35,.45,.5,12),mat(0x9a9d9a),0,.42,0);addMesh(new THREE.SphereGeometry(.28,16,12),mat(0xc9f36a),0,.82,0);
+// Lane centre dashed arc on the roundabout
+for(let i=0;i<40;i++){const a=i*Math.PI*2/40;const dash=box(.14,.025,.62,white,Math.sin(a)*8.15,-.018,Math.cos(a)*8.15,false);dash.rotation.y=a}
+function stripe(x,z,angle){const o=box(4.5,.025,.22,white,x,.012,z,false);o.rotation.y=angle}
+for(let a=0;a<4;a++){const rot=a*Math.PI/2;const x=Math.sin(rot),z=Math.cos(rot);for(let j=0;j<6;j++){const d=R+2.1+j*.68;const s=box(3.9,.025,.22,white,x*d,.015,z*d,false);s.rotation.y=-rot}for(let j=0;j<6;j++){const d=R+3.1+j*.65;const dash=box(.16,.025,.75,yellow,x*d,.018,z*d,false);dash.rotation.y=-rot}}
+// Crosswalks and pedestrian islands
+for(let a=0;a<4;a++){const rot=a*Math.PI/2;const x=Math.sin(rot),z=Math.cos(rot),cx=x*13.2,cz=z*13.2;for(let k=-3;k<=3;k++){const sideOffset=k*.55;const px=cx+Math.cos(rot)*sideOffset,pz=cz-Math.sin(rot)*sideOffset;const s=box(.32,.035,2.6,white,px,.03,pz,false);s.rotation.y=-rot}}
+// Street lights and signs around the approaches
+function pole(x,z){box(.13,3.5,.13,mat(0x58636a),x,1.75,z);const arm=box(1.25,.12,.12,mat(0x58636a),x+.55,3.35,z);const lamp=box(.62,.12,.35,mat(0xf4e8b7),x+1.08,3.25,z);lamp.material.emissive=new THREE.Color(0x66552b)}
+for(const [x,z] of [[-15,-15],[15,-15],[-15,15],[15,15]])pole(x,z);
+function sign(x,z,rot){box(.12,2,.12,mat(0x68747a),x,1,z);const p=addMesh(new THREE.CylinderGeometry(.52,.52,.08,8),mat(0xc94b3e),x,2.25,z);p.rotation.x=Math.PI/2;p.rotation.z=rot;const inner=addMesh(new THREE.CylinderGeometry(.39,.39,.085,8),white,x,2.25,z);inner.rotation.x=Math.PI/2;inner.rotation.z=rot}
+sign(-8,13,0);sign(8,-13,Math.PI/2);sign(13,8,Math.PI);sign(-13,-8,-Math.PI/2);
+// Low-poly surrounding blocks to give scale
+for(let i=0;i<12;i++){const a=i*Math.PI/6+.18,rad=25+(i%3)*3,w=5+(i%2)*2,h=5+(i%4)*2.2,x=Math.cos(a)*rad,z=Math.sin(a)*rad;const b=box(w,h,6,buildingMats[i%buildingMats.length],x,h/2-.15,z);b.rotation.y=-a}
+let down=false,px=0,py=0,theta=Math.PI/4,phi=.78,radius=42,pointers=new Map(),pinch=0;
+function cameraUpdate(){phi=Math.max(.22,Math.min(1.38,phi));radius=Math.max(19,Math.min(70,radius));camera.position.set(Math.sin(theta)*Math.cos(phi)*radius,Math.sin(phi)*radius,Math.cos(theta)*Math.cos(phi)*radius);camera.lookAt(0,0,0)}
+cameraUpdate();
+renderer.domElement.addEventListener('pointerdown',e=>{pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});renderer.domElement.setPointerCapture(e.pointerId);if(pointers.size===1){down=true;px=e.clientX;py=e.clientY}else if(pointers.size===2){const q=[...pointers.values()];pinch=Math.hypot(q[0].x-q[1].x,q[0].y-q[1].y)}});
+renderer.domElement.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1&&down){theta-=(e.clientX-px)*.008;phi+=(e.clientY-py)*.006;px=e.clientX;py=e.clientY;cameraUpdate()}else if(pointers.size===2){const q=[...pointers.values()],d=Math.hypot(q[0].x-q[1].x,q[0].y-q[1].y);if(pinch){radius*=pinch/d;cameraUpdate()}pinch=d}});
+function up(e){pointers.delete(e.pointerId);down=false;if(pointers.size<2)pinch=0}renderer.domElement.addEventListener('pointerup',up);renderer.domElement.addEventListener('pointercancel',up);renderer.domElement.addEventListener('wheel',e=>{radius+=e.deltaY*.025;cameraUpdate()},{passive:true});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5))});
+function animate(){requestAnimationFrame(animate);renderer.render(scene,camera)}animate();
+})();
+</script>
+</body>
+</html>
