@@ -4,49 +4,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#101923">
-<meta name="description" content="Pocket Drive: a mobile-first offline 3D-style driving game.">
+<meta name="description" content="Pocket Drive 3D driving prototype">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="style.css">
-<title>Pocket Drive</title>
+<title>Pocket Drive 3D</title>
 </head>
 <body>
 <main id="game-shell">
-  <canvas id="game" aria-label="Pocket Drive driving game"></canvas>
+  <div id="scene" aria-label="3D driving scene"></div>
   <header class="hud">
     <div class="hud-card"><small>SPEED</small><strong><span id="speed">0</span><i> km/h</i></strong></div>
-    <div class="hud-card score-card"><small>SCORE</small><strong id="score">0</strong></div>
+    <div class="hud-card score-card"><small>DISTANCE</small><strong><span id="distance">0</span><i> m</i></strong></div>
     <button id="pause" class="icon-button" aria-label="Pause">Ⅱ</button>
   </header>
-  <div class="mission"><span id="mission-text">DRIVE CAREFULLY</span><span id="distance">0 m</span></div>
+  <div class="mission"><span id="mission-text">CITY DRIVE</span><span id="gear">D</span></div>
   <section id="menu" class="screen">
     <div class="panel">
-      <div class="brand-mark">PD</div>
-      <p class="eyebrow">CITY DRIVER</p>
+      <div class="brand-mark">PD</div><p class="eyebrow">3D CITY DRIVER</p>
       <h1>POCKET<br><em>DRIVE</em></h1>
-      <p class="intro">Find your lane. Keep your distance. Drive smoothly.</p>
+      <p class="intro">Get behind the wheel. Follow the road. Drive your way through the city.</p>
       <button id="start" class="primary">START DRIVING <span>›</span></button>
-      <p class="hint">Touch controls · Offline play</p>
+      <p class="hint">Touch controls · Three-dimensional driving</p>
     </div>
   </section>
   <section id="pause-screen" class="screen hidden">
     <div class="panel compact"><p class="eyebrow">TAKE A BREATHER</p><h2>PAUSED</h2><button id="resume" class="primary">RESUME</button><button id="restart-pause" class="secondary">RESTART DRIVE</button></div>
   </section>
   <section id="crash-screen" class="screen hidden">
-    <div class="panel compact"><p class="eyebrow">DRIVE COMPLETE</p><h2>GOOD TRY</h2><p class="result">Score <strong id="final-score">0</strong></p><button id="retry" class="primary">DRIVE AGAIN</button></div>
+    <div class="panel compact"><p class="eyebrow">DRIVE COMPLETE</p><h2>TRIP ENDED</h2><p class="result">Distance <strong id="final-distance">0 m</strong></p><button id="retry" class="primary">DRIVE AGAIN</button></div>
   </section>
   <nav class="controls" aria-label="Driving controls">
-    <div class="steering">
-      <button class="control steer" data-control="left" aria-label="Steer left">‹</button>
-      <button class="control steer" data-control="right" aria-label="Steer right">›</button>
-    </div>
-    <div class="pedals">
-      <button class="control brake" data-control="brake">BRAKE</button>
-      <button class="control gas" data-control="gas">GAS <span>▲</span></button>
-    </div>
+    <div class="steering"><button class="control steer" data-control="left" aria-label="Steer left">‹</button><button class="control steer" data-control="right" aria-label="Steer right">›</button></div>
+    <div class="pedals"><button class="control brake" data-control="brake">BRAKE</button><button class="control gas" data-control="gas">GAS <span>▲</span></button></div>
   </nav>
-  <div id="toast" role="status"></div>
+  <div id="loading">BUILDING YOUR CAR…</div>
 </main>
-<script src="game.js"></script>
+<script type="module" src="game.js"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
 </body>
 </html>
