@@ -78,11 +78,12 @@ function runThree(){
  speed=clamp(speed,-5.5,23.5);
  // Front-wheel steering and a kinematic bicycle model.
  const steerInput=(held.left?1:0)-(held.right?1:0);
- const steerTarget=steerInput*0.43;
- steer+=(steerTarget-steer)*(1-Math.exp(-4.8*dtSec));
- const wheelbase=2.45;
- const targetYawRate=(speed/wheelbase)*Math.tan(steer);
- yawRate+=(targetYawRate-yawRate)*(1-Math.exp(-7.5*dtSec));
+ const steerTarget=steerInput*0.27;
+ steer+=(steerTarget-steer)*(1-Math.exp(-3.4*dtSec));
+ const wheelbase=2.65;
+ const speedSteerFactor=1-Math.min(0.22,absSpeed/110);
+ const targetYawRate=(speed/wheelbase)*Math.tan(steer)*speedSteerFactor*0.82;
+ yawRate+=(targetYawRate-yawRate)*(1-Math.exp(-5.2*dtSec));
  heading+=yawRate*dtSec;
  // The car points down -Z. Positive heading turns it toward screen-left.
  player.position.x-=Math.sin(heading)*speed*dtSec;
