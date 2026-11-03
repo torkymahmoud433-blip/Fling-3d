@@ -77,7 +77,7 @@ function runThree(){
  }
  speed=clamp(speed,-5.5,23.5);
  // Front-wheel steering and a kinematic bicycle model.
- const steerInput=(held.left?-1:0)+(held.right?1:0);
+ const steerInput=(held.left?1:0)-(held.right?1:0);
  const steerTarget=steerInput*0.43;
  steer+=(steerTarget-steer)*(1-Math.exp(-4.8*dtSec));
  const wheelbase=2.45;
